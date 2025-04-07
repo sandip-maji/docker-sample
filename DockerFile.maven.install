@@ -1,0 +1,32 @@
+FROM docker-enterprise-prod-local.artifactrepository.delta.net/developersvcs-java/oracle-jdk-rhel8/17e64:17.0_13164_2024121900
+
+# Switch to root for setup
+USER root
+
+# Set up working directory
+WORKDIR /tmp
+
+RUN mkdir -p /tmp/git-repos && \
+    chown -R 1005780000:1005780000 /tmp/git-repos && \
+    chmod -R 775 /tmp/git-repos
+
+# Install required packages
+RUN microdnf install -y curl tar && \
+    curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-25.0.1.tgz | tar -xz && \
+    mv docker/docker /usr/bin/docker && \
+    rm -rf docker docker-25.0.1.tgz && \
+    chmod +x /usr/bin/docker
+
+# Verify Docker installation
+RUN docker --version
+
+# Copy the application jar
+COPY target/app-onboard-0.0.1-SNAPSHOT.jar /tmp/
+
+RUN chmod 755 /tmp/app-onboard-0.0.1-SNAPSHOT.jar
+
+# Expose application port
+EXPOSE 8443/tcp
+
+# Set entrypoint
+ENTRYPOINT exec java $JAVA_OPTS -jar /tmp/app-onboard-0.0.1-SNAPSHOT.jar
