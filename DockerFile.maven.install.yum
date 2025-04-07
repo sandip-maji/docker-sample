@@ -1,0 +1,35 @@
+FROM docker-enterprise-prod-local.artifactrepository.delta.net/developersvcs-java/oracle-jdk-rhel8/17e64:17.0_13164_2024121900
+
+# Switch to root for setup
+USER root
+
+# Set up working directory
+WORKDIR /tmp
+
+# Create and set permissions for /tmp/git-repos
+RUN mkdir -p /tmp/git-repos && \
+    chown -R 1005780000:1005780000 /tmp/git-repos && \
+    chmod -R 775 /tmp/git-repos
+
+# Install curl using YUM (instead of microdnf)
+RUN yum install -y curl && yum clean all
+
+# Download and install Docker CLI RPM from internal Nexus repo using curl + yum
+RUN curl -O http://<nexus-host>/repository/rpms/docker-ce-cli-25.0.1.rpm && \
+    yum install -y docker-ce-cli-25.0.1.rpm && \
+    rm -f docker-ce-cli-25.0.1.rpm && \
+    yum clean all
+
+# Verify Docker CLI installed
+RUN docker --version
+
+# Copy the Spring Boot application jar
+COPY target/app-onboard-0.0.1-SNAPSHOT.jar /tmp/
+
+RUN chmod 755 /tmp/app-onboard-0.0.1-SNAPSHOT.jar
+
+# Expose application port
+EXPOSE 8443/tcp
+
+# Run the application
+ENTRYPOINT exec java $JAVA_OPTS -jar /tmp/app-onboard-0.0.1-SNAPSHOT.jar
