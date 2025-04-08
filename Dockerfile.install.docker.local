@@ -1,0 +1,30 @@
+# Use RHEL-based image
+FROM registry.access.redhat.com/ubi8/ubi
+
+ENV MAVEN_VERSION=3.9.6
+ENV MAVEN_HOME=/opt/maven
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH=$MAVEN_HOME/bin:$PATH
+
+# Install Java using yum
+RUN yum -y install java-17-openjdk java-17-openjdk-devel tar && \
+    yum clean all
+
+# Create Maven directory
+RUN mkdir -p /opt/maven
+
+# Copy local tgz file into image
+COPY apache-maven-${MAVEN_VERSION}-bin.tar.gz /tmp/
+
+# Extract and configure Maven
+RUN tar -xzf /tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven && \
+    rm -f /tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+
+# Set working directory
+WORKDIR /app
+
+# Verify installations
+RUN java -version && mvn -version
+
+CMD ["/bin/bash"]
